@@ -1,0 +1,24 @@
+services:
+  search-engine:
+    build: .
+    image: mini-search-engine:latest
+    container_name: search-engine
+    ports:
+      # Host port is overridable (SEARCH_ENGINE_PORT=8080 docker-compose up) in case
+      # something else already owns 8000 on the host.
+      - "${SEARCH_ENGINE_PORT:-8000}:8000"
+    environment:
+      # Keep the database on the /data volume regardless of what the JSON config says.
+      SEARCH_ENGINE_DB_PATH: /data/search.db
+    volumes:
+      # Persistent SQLite storage.
+      - search-data:/data
+      # The secrets directory holding search_engine_config.json, read-only.
+      - ${HOME}/.secrets:/home/app/.secrets:ro
+    # Default: serve the API.  Trigger a crawl with:
+    #   docker-compose run --rm search-engine crawl
+    command: ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    restart: unless-stopped
+
+volumes:
+  search-data:
